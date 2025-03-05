@@ -1,0 +1,3025 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Roulette Suite</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans|Raleway" rel="stylesheet">
+
+
+        <meta http-equiv="Content-type" content="text/html; charset=utf-8">
+      	<script src="http://www.h2.dion.ne.jp/~defghi/snapsvg/snap.svg.js"></script>
+
+
+        <!-- Latest compiled and minified JQuery -->
+      	<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+      	<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+      	<script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
+        <!-- 1.12.0, 1.2.1 -->
+      	<!-- Latest compiled and minified JavaScript -->
+      	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+      	<!-- Call own JS files -->
+      	<script src="./ajaxMessagesRoulette.js" type="text/javascript" charset="utf-8"></script>
+
+
+        <!-- <link rel="shortcut icon" href="">-->
+        <!-- <link rel="icon" href="data:;base64,=">-->
+    </head>
+    <body>
+        <canvas id="myCanvas" width="1080" height="720"></canvas>  <!-- 800 500 /1200 800-->
+        <script>
+            const
+                NUM_PRACTICE_ANGLE = 1,
+                NUM_PRACTICE_SPEED = 1,
+                NUM_PRACTICE_ROULETTE = 1,
+                NUM_TRIALS_ANGLE = 1,
+                NUM_TRIALS_SPEED = 1,
+                NUM_TRIALS_ROULETTE = 3,//15
+                PLAY_ANGLE_BOOL = 1, //For internal test: set to 0 to skip angle game
+                PLAY_SPEED_BOOL = 1, //Set to 0 to skip speed game
+                PLAY_ROULETTE_BOOL = 1;
+                DIST_OFFSET = 85;
+            //Welcome Page
+            welcomePage = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height;
+
+
+                var ctx = canvas.getContext("2d");
+                var done = false;
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if(e.keyCode > 0) {
+                        done = true;
+
+                    }
+
+                }
+                function mouseClickHandler(e) {
+
+                    done = true;
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+
+                    if (done) {
+
+                        var doneWelcome = 1;
+                        return doneWelcome;
+                    }
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+                this.render = function() {
+
+                    // Clear canvas
+                    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Draw instructions
+                    ctx.font = "45px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("A Simplified Game of Roulette", CANVAS_WIDTH/2, 60);
+
+                    ctx.font = "27px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("This game is designed to test your skills at tracking a ", CANVAS_WIDTH/2, 120+DIST_OFFSET);
+                    ctx.fillText("moving object, predicting its movement and intercept-", CANVAS_WIDTH/2, 155+DIST_OFFSET);
+                    ctx.fillText("ing it with your mouse. It consists of three minigames:", CANVAS_WIDTH/2, 190+DIST_OFFSET);
+                    ctx.fillText("the first tests your angular acuity, the second tests", CANVAS_WIDTH/2, 225+DIST_OFFSET);
+                    ctx.fillText("your speed sensitivity, and the last (a simplified game", CANVAS_WIDTH/2, 260+DIST_OFFSET);
+                    ctx.fillText("of roulette) tests your intercepting ability. You", CANVAS_WIDTH/2, 295+DIST_OFFSET);
+                    ctx.fillText("are encouraged to trade off between speed and", CANVAS_WIDTH/2, 330+DIST_OFFSET);
+                    ctx.fillText("accuracy to maximize your score.", CANVAS_WIDTH/2, 365+DIST_OFFSET);
+                    ctx.textAlign = "center";
+                    ctx.font = "22px Raleway";
+                    ctx.fillText("Press any key to continue", CANVAS_WIDTH/2, CANVAS_HEIGHT - 155);
+                    // ctx.fillText("Internal Test 2.0     Sep, 2019", CANVAS_WIDTH/2, CANVAS_HEIGHT - 55);
+                    // ctx.fillText("Mahadevan Lab, Harvard University", CANVAS_WIDTH/2, CANVAS_HEIGHT - 25);
+
+
+                };
+
+            };
+
+            //Size Calibration
+            sizeCalibration = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height,
+                    CARD_WIDTH = 3.370, // inches
+                    CARD_HEIGHT = 2.125, // inches
+                    ASPECT_RATIO = CARD_HEIGHT / CARD_WIDTH, // Credit card aspect ratio
+                    CANVAS_WIDTH_REAL = 9.5,
+                    CANVAS_HEIGHT_REAL = CANVAS_WIDTH_REAL * 1080 / 1920;
+
+                // Key codes
+                const
+                    KEY_UP = 38,
+                    KEY_DOWN = 40,
+                    KEY_SPACE = 32;
+
+                var ctx = canvas.getContext("2d");
+                var distance = 344; // pixels
+
+                var upPressed = false;
+                var downPressed = false;
+                var done = false;
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("keyup", keyUpHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if(e.keyCode === KEY_SPACE) {
+                        done = true;
+                    }
+                    else if(e.keyCode === KEY_UP) {
+                        upPressed = true;
+                    }
+                    else if(e.keyCode === KEY_DOWN) {
+                        downPressed = true;
+                    }
+                }
+                function keyUpHandler(e) {
+
+                    if(e.keyCode === KEY_UP) {
+                        upPressed = false;
+                    }
+                    else if(e.keyCode === KEY_DOWN) {
+                        downPressed = false;
+                    }
+                }
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+
+                    if (done) {
+
+                        var pixelsPerInch = distance / CARD_WIDTH;
+
+                        canvas.width = pixelsPerInch * CANVAS_WIDTH_REAL;
+                        canvas.height = pixelsPerInch * CANVAS_HEIGHT_REAL;
+                        sendRequestPost('Data_Calibration', distance.toString());
+                        return pixelsPerInch;
+                    }
+                    else if (upPressed && !downPressed) {
+
+                        if (distance < CANVAS_WIDTH - 1) { distance += 1;}
+
+                    }
+                    else if (downPressed && !upPressed) {
+
+                        if (distance > 1) { distance -= 1; }
+
+                    }
+
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+                this.render = function() {
+
+                    var height = ASPECT_RATIO * distance;
+                    var x = (CANVAS_WIDTH - distance) / 2;
+                    var y = (CANVAS_HEIGHT - height) / 2;
+
+                    // Clear canvas
+                    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Draw rectangle
+                    ctx.beginPath();
+                    ctx.rect(x, y, distance, height);
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    // Draw instructions
+                    ctx.font = "30px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("For display purposes, we need to calibrate your monitor.", CANVAS_WIDTH/2, 30);
+                    ctx.fillText("Use the up and down keys to resize the rectangle.", CANVAS_WIDTH/2, 60);
+                    ctx.fillText("Match it to the size of a standard credit card.", CANVAS_WIDTH/2, 90);
+                    ctx.fillText("Press space when you are done calibrating.", CANVAS_WIDTH/2, CANVAS_HEIGHT - 60);
+
+                };
+
+            };
+            consentForm = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height;
+                    LINE_WIDTH = 35;
+                    LINE_OFFSET = 120;
+                    LEFT_OFFSET = 40;
+
+
+                var ctx = canvas.getContext("2d");
+                var done = false;
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if(e.keyCode === 32) {
+                        done = true;
+
+                    }
+
+                }
+                function mouseClickHandler(e) {
+
+                    //done = true;
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+
+                    if (done) {
+
+                        var doneConsent = 1;
+                        return doneConsent;
+                    }
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+                this.render = function() {
+
+                    // Clear canvas
+                    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Draw instructions
+                    ctx.font = "45px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Consent Form", CANVAS_WIDTH/2, 30);
+
+                    ctx.font = "23px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Please read the following information carefully before proceeding. ", LEFT_OFFSET, LINE_OFFSET+LINE_WIDTH);
+                    ctx.fillText("Why we are doing this research: we aim to study how people make trade-off between speed and", LEFT_OFFSET, LINE_OFFSET+2*LINE_WIDTH);//
+                    var text = ctx.measureText("Why we are doing this research:");
+                    ctx.fillRect(LEFT_OFFSET, LINE_OFFSET+85, text.width, 2);
+                    ctx.fillText("accuracy in the classic game of Roulette. With this data we hope to learn about the decision", LEFT_OFFSET, LINE_OFFSET+3*LINE_WIDTH);
+                    ctx.fillText("making process on simple day-to-day tasks.", LEFT_OFFSET, LINE_OFFSET+4*LINE_WIDTH);
+                    ctx.fillText("What you will have to do:  As a participant, you will play three minigames in this web-interface.", LEFT_OFFSET, LINE_OFFSET+5*LINE_WIDTH);
+                    var text = ctx.measureText("What you will have to do:");
+                    ctx.fillRect(LEFT_OFFSET, LINE_OFFSET+190, text.width, 2);
+                    ctx.fillText("The first two games are calibration games, to measure your perception errors on angle and speed", LEFT_OFFSET, LINE_OFFSET+6*LINE_WIDTH);
+                    ctx.fillText("measurement. The third game is the game of roulette where a moving ball experiences a constant ", LEFT_OFFSET, LINE_OFFSET+7*LINE_WIDTH);
+                    ctx.fillText("drag force on the circular track. Your task is to bet the final stopping position of the ball", LEFT_OFFSET, LINE_OFFSET+8*LINE_WIDTH);
+                    ctx.fillText("as fast and accurately as possible. Your score is based on both your speed and accuracy.", LEFT_OFFSET, LINE_OFFSET+9*LINE_WIDTH);
+                    ctx.fillText("Benefits and compensations:  We do not expect any direct benefits to you from your taking part in", LEFT_OFFSET, LINE_OFFSET+10*LINE_WIDTH);
+                    var text = ctx.measureText("Benefits and compensations:");
+                    ctx.fillRect(LEFT_OFFSET, LINE_OFFSET+365, text.width, 2);
+                    ctx.fillText("this research. You will be compensated by FIVE (5) US dollars upon completion of the game.", LEFT_OFFSET, LINE_OFFSET+11*LINE_WIDTH);
+                    ctx.fillText("Privacy: Your response will be kept anonymous and stored indefinitely on our password-protected", LEFT_OFFSET, LINE_OFFSET+12*LINE_WIDTH);
+                    var text = ctx.measureText("Privacy:");
+                    ctx.fillRect(LEFT_OFFSET, LINE_OFFSET+435, text.width, 2);
+                    ctx.fillText("server. The study does not collect any direct or indirect individual identifiers throughout.", LEFT_OFFSET, LINE_OFFSET+13*LINE_WIDTH);
+                    ctx.fillText("Duration: Approximately 15-25 minutes. There is no time limit for completion.", LEFT_OFFSET, LINE_OFFSET+14*LINE_WIDTH);
+                    var text = ctx.measureText("Duration:");
+                    ctx.fillRect(LEFT_OFFSET, LINE_OFFSET+505, text.width, 2);
+                    ctx.textAlign = "center";
+                    ctx.font = "22px Raleway";
+                    ctx.fillText("Press SPACE to review the next page", CANVAS_WIDTH/2, CANVAS_HEIGHT - 65);
+                    // ctx.fillText("Internal Test 2.0     Sep, 2019", CANVAS_WIDTH/2, CANVAS_HEIGHT - 55);
+                    // ctx.fillText("Mahadevan Lab, Harvard University", CANVAS_WIDTH/2, CANVAS_HEIGHT - 25);
+
+
+                };
+
+            };
+            consentForm2 = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height;
+                    LINE_WIDTH = 35;
+                    LINE_OFFSET = 85;
+                    LEFT_OFFSET = 40;
+
+
+                var ctx = canvas.getContext("2d");
+                var done = 0;
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if(e.keyCode === 89) {
+                        done = 1;
+                    }
+                    if(e.keyCode === 38) {
+                      done = 2;
+                    }
+
+                }
+                function mouseClickHandler(e) {
+
+                    //done = true;
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+
+                    if (done === 1) {
+
+                        var doneConsent = 1;
+                        return doneConsent;
+                    }
+                    if (done === 2) {
+                        var goBack = 2;
+                        return goBack
+                    }
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+                this.render = function() {
+
+                    // Clear canvas
+                    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Draw instructions
+                    ctx.font = "45px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Consent Form", CANVAS_WIDTH/2, 30);
+
+                    ctx.font = "23px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+
+                    ctx.fillText("To contact the researcher: If you have questions or concerns about this research, please contact", LEFT_OFFSET, LINE_OFFSET+2*LINE_WIDTH);//
+                    var text = ctx.measureText("To contact the researcher:");
+                    ctx.fillRect(LEFT_OFFSET, 170, text.width, 2);
+                    ctx.fillText("S Ganga Prasath at gangaprasath@seas.harvard.edu ", LEFT_OFFSET, LINE_OFFSET+3*LINE_WIDTH);
+                    ctx.fillText("Address: 258 Northwest Building, 52 Oxford St, Cambridge, MA 02138", LEFT_OFFSET, LINE_OFFSET+4*LINE_WIDTH);
+
+                    ctx.fillText("Research review: This research has been reviewed by the Committee on the Use of Human Subject", LEFT_OFFSET, LINE_OFFSET+5*LINE_WIDTH);
+                    var text = ctx.measureText("Research Review:");
+                    ctx.fillRect(LEFT_OFFSET, 275, text.width, 2);
+                    ctx.fillText("in Research at Harvard University. They can be reached at Smith Campus Center,", LEFT_OFFSET, LINE_OFFSET+6*LINE_WIDTH);
+                    ctx.fillText("1350 Massachusetts Avenue, 9th Floor,Suite 935, Cambridge, MA 02138 USA Phone: (617)495-5459.", LEFT_OFFSET, LINE_OFFSET+7*LINE_WIDTH);
+                    ctx.fillText("E-mail: cuhs@harvard.edu, if your questions, concerns, or complaints are not being answered", LEFT_OFFSET, LINE_OFFSET+8*LINE_WIDTH);
+                    //ctx.fillText("if you cannot reach the research team, if you want to talk to someone besides the research team, ", LEFT_OFFSET, LINE_OFFSET+10*LINE_WIDTH);
+                    ctx.fillText("by the research team, or if you have questions about your rights as a research participant.", LEFT_OFFSET, LINE_OFFSET+9*LINE_WIDTH);
+                    ctx.fillText("Your participation is voluntary and you are free to leave at any time by closing the browser.", LEFT_OFFSET, LINE_OFFSET+11*LINE_WIDTH);
+                    ctx.fillText("Please print or save a copy of this page for your records.", LEFT_OFFSET, LINE_OFFSET+12*LINE_WIDTH);
+
+                    ctx.fillText("Press Y if you confirm that you have read and understood the above and agree to take part", LEFT_OFFSET, LINE_OFFSET+14*LINE_WIDTH);
+                    ctx.fillText("in this research. Press ↑ (upwards arrow) if you wish to go back to the previous page.", LEFT_OFFSET, LINE_OFFSET+15*LINE_WIDTH);
+                    //ctx.fillText("Press ↑ (upwards arrow) if you wish to go back to the previous page.", LEFT_OFFSET, LINE_OFFSET+16*LINE_WIDTH);
+                    ctx.fillText("If you prefer not to participate, exit the browser.", LEFT_OFFSET, LINE_OFFSET+17*LINE_WIDTH);
+                    // ctx.fillText("Internal Test 2.0     Sep, 2019", CANVAS_WIDTH/2, CANVAS_HEIGHT - 55);
+                    // ctx.fillText("Mahadevan Lab, Harvard University", CANVAS_WIDTH/2, CANVAS_HEIGHT - 25);
+
+
+                };
+
+            };
+
+
+            beforeStart = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height;
+                    LINE_WIDTH = 35;
+                    LINE_OFFSET = 85;
+                    LEFT_OFFSET = 80;
+
+
+                var ctx = canvas.getContext("2d");
+                var done = 0;
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if(e.keyCode === 32) {
+                        done = 1;
+                    }
+
+                }
+                function mouseClickHandler(e) {
+
+                    //done = true;
+                }
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+
+                    if (done === 1) {
+
+                        var doneNotice = 1;
+                        return doneNotice;
+                    }
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+                this.render = function() {
+
+                    // Clear canvas
+                    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+                    // Draw instructions
+                    ctx.font = "45px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("Before you start", CANVAS_WIDTH/2, 30);
+
+                    ctx.font = "23px Raleway";
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+
+                    ctx.fillText("1. Please do not click refresh or go back during the game. The progress is not saved", LEFT_OFFSET, LINE_OFFSET+2*LINE_WIDTH);//
+                    ctx.fillText("   until you finish.", LEFT_OFFSET, LINE_OFFSET+3*LINE_WIDTH);
+                    ctx.fillText(" ", LEFT_OFFSET, LINE_OFFSET+4*LINE_WIDTH);
+                    ctx.fillText("2. There will be 5 practice trials in each minigame. After the practice, there will", LEFT_OFFSET, LINE_OFFSET+5*LINE_WIDTH);
+                    ctx.fillText("   be 10 trials for the angle and speed minigame, and 30 trials in the roulette game.", LEFT_OFFSET, LINE_OFFSET+6*LINE_WIDTH);
+                    ctx.fillText(" ", LEFT_OFFSET, LINE_OFFSET+7*LINE_WIDTH);
+                    ctx.fillText("3. There is no time limit for the first two minigames. In the roulette game, you are", LEFT_OFFSET, LINE_OFFSET+8*LINE_WIDTH);
+                    ctx.fillText("   encouraged to bet both fast and accurately.", LEFT_OFFSET, LINE_OFFSET+9*LINE_WIDTH);
+                    // ctx.fillText("Your participation is voluntary and you are free to leave at any time by closing the browser.", LEFT_OFFSET, LINE_OFFSET+11*LINE_WIDTH);
+                    ctx.textAlign = "center";
+                    ctx.fillText("Please SPACE to continue.", CANVAS_WIDTH/2, LINE_OFFSET+12*LINE_WIDTH);
+                    // ctx.fillText("Press Y if you confirm that you have read and understood the above and agree to take part", LEFT_OFFSET, LINE_OFFSET+14*LINE_WIDTH);
+                    // ctx.fillText("in this research.", LEFT_OFFSET, LINE_OFFSET+15*LINE_WIDTH);
+                    // ctx.fillText("Press ↑ (upwards arrow) if you wish to go back to the previous page.", LEFT_OFFSET, LINE_OFFSET+16*LINE_WIDTH);
+                    // ctx.fillText("If you prefer not to participate, exit the browser.", LEFT_OFFSET, LINE_OFFSET+17*LINE_WIDTH);
+                    // ctx.fillText("Internal Test 2.0     Sep, 2019", CANVAS_WIDTH/2, CANVAS_HEIGHT - 55);
+                    // ctx.fillText("Mahadevan Lab, Harvard University", CANVAS_WIDTH/2, CANVAS_HEIGHT - 25);
+
+
+                };
+
+            };
+
+
+
+            //Personal Information
+            personalInfo = function(canvas) {
+
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height;
+
+                const
+                    FILL_COLOR = "rgba(203,203,203,0.3)";
+
+                // Key codes
+                const
+                    KEY_ENTER = 13,
+                    KEY_LEFT = 37,
+                    KEY_UP = 38,
+                    KEY_RIGHT = 39,
+                    KEY_DOWN = 40,
+                    KEY_TAB = 9;
+
+                    // Text properties
+                const
+                    TEXT_SIZE = 1/17 * CANVAS_HEIGHT,
+                    HEADING_SIZE = 1.5 * TEXT_SIZE,
+                    TITLE_SIZE = 2 * TEXT_SIZE,
+                    LINE_SPACING = 1.2 * TEXT_SIZE,
+                    HEADING_X = 0.05 * CANVAS_WIDTH,
+                    HEADING_Y = HEADING_X;
+
+
+
+                // Game modes
+                const
+                    MODE_GENDER = 0,
+                    MODE_AGE = 1,
+                    MODE_HAND = 2,
+                    MODE_EDUCATION = 3,
+                    MODE_END = 4;
+
+                const
+                    LEFT_HAND = 0,
+                    RIGHT_HAND = 1,
+                    GENDER_MALE = 0,
+                    GENDER_FEMALE = 1,
+                    GENDER_OTHER = 2,
+                    GO_BACK=1,
+                    STAY=0,
+                    GO_NEXT=2;
+
+                var ctx = canvas.getContext("2d");
+                var inputDone = false;
+                var infoDone = false;
+                var handed;
+                var gender;
+                var gameMode = MODE_GENDER;
+                var eduString = [];
+                var eduStringToShow;
+                var ageString = [];
+                var ageStringToShow;
+                var handString;
+                var goto=STAY;
+
+
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                //document.addEventListener("keyup", keyUpHandler, false);
+                //document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+                    if (e.keyCode === KEY_UP) {
+                      goto=GO_BACK;
+                      return;
+                    }
+                    if (e.keyCode === KEY_DOWN || e.keyCode === KEY_TAB) {
+                      goto=GO_NEXT;
+                      return;
+                    }
+
+                    if(e.keyCode === KEY_ENTER) { // Press Enter to go to the next info item
+                      /*if (gameMode !== MODE_HAND && gameMode !== MODE_GENDER && gameMode !== MODE_GENDER) {
+                        inputDone = true;
+                      }
+                      else {
+                        if (gameMode === MODE_HAND && typeof handed !== "undefined") {
+                          inputDone = true;
+                        }
+                      }*/
+                      inputDone = true;
+                    }
+                    else if ((e.keyCode === 76 || e.keyCode === 82 ) && gameMode === MODE_HAND) { //For lefthanded or righthanded
+                      if (e.keyCode === 76) {
+                        handed = LEFT_HAND;
+                        handString = "Left-handed";
+                      }
+                      else {
+                        handed = RIGHT_HAND;
+                        handString = "Right-handed";
+                      }
+                      //inputDone = true;
+                    }
+                    else if ((e.keyCode === 77 || e.keyCode === 70 || e.keyCode=== 79) && gameMode === MODE_GENDER) { //For gender
+                      if (e.keyCode === 77) {
+                        gender = GENDER_MALE;
+                        genderString="Male";
+                      }
+                      else if (e.keyCode === 70){
+                        gender = GENDER_FEMALE;
+                        genderString="Female";
+                      }
+                      else {
+                        gender = GENDER_OTHER;
+                        genderString="Other"
+                      }
+                      //inputDone = true;
+                    }
+                    else if((e.keyCode >= 48 && e.keyCode <= 57) || e.keyCode === 32) {
+                      if (gameMode === MODE_AGE) {
+                        ageString.push(String.fromCharCode(e.keyCode));
+                        ageStringToShow = ageString.join('');
+                      }
+                      else if (gameMode === MODE_EDUCATION) {
+                        eduString.push(String.fromCharCode(e.keyCode));
+                        eduStringToShow = eduString.join('');
+                      }
+                    }
+                    else if (e.keyCode === 8 && ageString.length > 0 && gameMode===MODE_AGE) {
+
+                      ageString.pop();
+                      ageStringToShow=ageString.join('');
+                    }
+                    else if (e.keyCode === 8 && eduString.length > 0 && gameMode === MODE_EDUCATION) {
+                      eduString.pop();
+                      eduStringToShow=eduString.join('');
+                    }
+                }
+
+
+                // -------------------------------------------------------------------------
+                // Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function() {
+                    if (goto===GO_BACK && gameMode !== MODE_GENDER) {
+                      gameMode-=1;
+                      goto=STAY;
+                      return;
+                    }
+                    if (goto===GO_NEXT && gameMode !== MODE_END) {
+                      gameMode++;
+                      goto=STAY;
+                      return;
+                    }
+                    if (inputDone) {
+                        var doneInfo;
+                        switch (gameMode)  {
+
+                          case MODE_EDUCATION:
+                            gameMode = MODE_END;
+                            break;
+
+                          case MODE_GENDER:
+                            if (typeof gender !== "undefined") {
+                              gameMode = MODE_AGE;
+                            }
+                            break;
+
+                          case MODE_AGE:
+                            gameMode = MODE_HAND;
+                            break;
+
+                          case MODE_HAND:
+                            if (typeof handed !== "undefined") {
+                              gameMode = MODE_EDUCATION;
+                            }
+                            break;
+
+                          case MODE_END:
+
+                            doneInfo = true;
+                            sendRequestPost("Info_Edu", eduStringToShow);
+                            sendRequestPost("Info_Gender", genderString);
+                            sendRequestPost("Info_Age", ageStringToShow);
+                            sendRequestPost("Info_Hand", handString);
+                            return doneInfo;
+
+                        };
+                        inputDone = false;
+
+                        return;
+                    }
+
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering
+                // -------------------------------------------------------------------------
+
+                    // Draw rectangle
+                    //ctx.beginPath();
+                    //ctx.rect(x, y, distance, height);
+                    //ctx.stroke();
+                    //ctx.closePath();
+
+
+                this.render = function() {
+
+                    // format text
+                    ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+                    switch (gameMode) {
+
+                        case MODE_EDUCATION:
+
+                            ctx.beginPath();
+                            ctx.rect(CANVAS_WIDTH/100*51, HEADING_Y + 2.5*TEXT_SIZE + LINE_SPACING*3.5 + 2, CANVAS_WIDTH/100*25, 1.2*TEXT_SIZE);
+                            ctx.closePath();
+                            ctx.fillStyle = FILL_COLOR;
+                            ctx.fill();
+
+
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Personal Information", HEADING_X, HEADING_Y);
+                            ctx.font = (TEXT_SIZE-5).toString() + "px Raleway";
+                            ctx.textAlign = "center";
+                            ctx.fillText("Enter years of education from primary school to highest degree", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 7 * LINE_SPACING);
+                            ctx.fillText("Press Enter to continue", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 8 * LINE_SPACING);
+
+                            // draw instructions
+
+
+                            break;
+
+                        case MODE_GENDER:
+
+                            // draw textbox
+                            ctx.beginPath();
+                            ctx.rect(CANVAS_WIDTH/100*51, HEADING_Y + 2.5*TEXT_SIZE + LINE_SPACING * 0.5 + 2, CANVAS_WIDTH/100*25, 1.2*TEXT_SIZE);
+                            ctx.closePath();
+                            ctx.fillStyle = FILL_COLOR;
+                            ctx.fill();
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Personal Information", HEADING_X, HEADING_Y);
+                            ctx.textAlign = "center"
+                            ctx.font = (TEXT_SIZE - 5).toString() + "px Raleway";
+                            ctx.fillText("Press M for male, F for female, O for other", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 7 * LINE_SPACING);
+                            ctx.fillText("Press Enter to continue", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 8 * LINE_SPACING);
+
+                            // draw instructions
+                            ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+
+                            break;
+                        case MODE_AGE:
+                            // draw textbox
+                            ctx.beginPath();
+                            ctx.rect(CANVAS_WIDTH/100*51, HEADING_Y + 2.5*TEXT_SIZE + LINE_SPACING*1.5 + 2, CANVAS_WIDTH/100*25, 1.2*TEXT_SIZE);
+                            ctx.closePath();
+                            ctx.fillStyle = FILL_COLOR;
+                            ctx.fill();
+
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Personal Information", HEADING_X, HEADING_Y);
+
+
+                            ctx.textAlign = "center"
+                            ctx.font = (TEXT_SIZE - 5).toString() + "px Raleway";
+                            ctx.fillText("Type your age (optional)", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 7 * LINE_SPACING);
+                            ctx.fillText("Press Enter to continue", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 8 * LINE_SPACING);
+
+                            // draw instructions
+
+
+                            break;
+                        case MODE_HAND:
+                            // draw textbox
+                            ctx.beginPath();
+                            ctx.rect(CANVAS_WIDTH/100*51, HEADING_Y + 2.5*TEXT_SIZE + LINE_SPACING*2.5 + 2, CANVAS_WIDTH/100*25, 1.2*TEXT_SIZE);
+                            ctx.closePath();
+                            ctx.fillStyle = FILL_COLOR;
+                            ctx.fill();
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Personal Information", HEADING_X, HEADING_Y);
+                            ctx.textAlign = "center"
+                            ctx.font = (TEXT_SIZE - 5).toString() + "px Raleway";
+                            ctx.fillText("Press L for left-handed, R for right-handed", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 7 * LINE_SPACING);
+                            ctx.fillText("Press Enter to continue", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 8 * LINE_SPACING);
+
+                            // draw instructions
+
+                            break;
+                        case MODE_END:
+
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Personal Information", HEADING_X, HEADING_Y);
+                            ctx.textAlign = "center"
+                            ctx.font = (TEXT_SIZE - 5).toString() + "px Raleway";
+                            ctx.fillText("Press Enter to continue", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 8 * LINE_SPACING);
+
+                            // draw instructions
+                            ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+
+
+
+                            break;
+                    };
+                    ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                    ctx.textAlign = "right";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = "black";
+                    ctx.fillText("Education:", CANVAS_WIDTH/100*47, HEADING_Y + 2.5*TEXT_SIZE + 4*LINE_SPACING);
+                    ctx.fillText("Gender:", CANVAS_WIDTH/100*47, HEADING_Y + 2.5*TEXT_SIZE + 1 * LINE_SPACING);
+                    ctx.fillText("Age:", CANVAS_WIDTH/100*47, HEADING_Y + 2.5*TEXT_SIZE + 2 * LINE_SPACING);
+                    ctx.fillText("Handedness:", CANVAS_WIDTH/100*47, HEADING_Y + 2.5*TEXT_SIZE + 3 * LINE_SPACING);
+                    ctx.textAlign = "left";
+                    if (eduString.length > 0) {
+                      ctx.fillText(eduStringToShow, CANVAS_WIDTH/100*52, HEADING_Y + 2.5*TEXT_SIZE + 4* LINE_SPACING)
+                    }
+                    if (typeof genderString !== "undefined") {
+                        ctx.fillText(genderString, CANVAS_WIDTH/100*52, HEADING_Y + 2.5*TEXT_SIZE + 1*LINE_SPACING);
+                    }
+                    if (ageString.length > 0) {
+                      ctx.fillText(ageStringToShow, CANVAS_WIDTH/100*52, HEADING_Y + 2.5*TEXT_SIZE + 2 * LINE_SPACING)
+                    }
+                    if (typeof handString !== "undefined") {
+                      ctx.fillText(handString, CANVAS_WIDTH/100*52, HEADING_Y + 2.5*TEXT_SIZE + 3 * LINE_SPACING);
+                    }
+
+                };
+
+            };
+
+            //Angle Matching Game
+            angleMatchingGame = function(canvas) {
+
+                // -------------------------------------------------------------------------
+                // Constants
+                // -------------------------------------------------------------------------
+
+                // Game parameters
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height,
+                    TIME_READY = 1.5,
+                    TIME_PRESENT = 1.0,//2.0
+                    TIME_HIDE = 0.5,
+                    BLINK_FREQ = 0.8,
+                    NUM_TRIALS_GAME = NUM_TRIALS_ANGLE,
+                    NUM_TRIALS_PRACTICE = NUM_PRACTICE_ANGLE;
+
+                // Text properties
+                const
+                    TEXT_SIZE = 1/19 * CANVAS_HEIGHT, //1/17
+                    HEADING_SIZE = 1.676 * TEXT_SIZE,
+                    TITLE_SIZE = 2 * TEXT_SIZE,
+                    LINE_SPACING = 1.2 * TEXT_SIZE,
+                    HEADING_X = 0.05 * CANVAS_WIDTH,
+                    HEADING_Y = HEADING_X,
+                    INDENTATION_X = 0.05*CANVAS_WIDTH,
+                    MAINTEXT_X = HEADING_X+INDENTATION_X;
+
+                // Game modes
+                const
+                    MODE_INSTRUCTIONS = 0,
+                    MODE_PRESENTING = 1,
+                    MODE_HIDING = 2,
+                    MODE_PLAYING = 3,
+                    MODE_RESULTS = 4,
+                    MODE_END = 5;
+
+                // Key codes
+                const
+                    KEY_LEFT = 37,
+                    KEY_UP = 38,
+                    KEY_RIGHT = 39,
+                    KEY_DOWN = 40,
+                    KEY_SPACE = 32,
+                    KEY_R = 82,
+                    KEY_S = 83;
+
+                // Data indices
+                const
+                    DATA_BALL_INIT = 0,
+                    DATA_CURSOR_INIT = 1,
+                    DATA_BALL_FINAL = 2,
+                    DATA_CURSOR_FINAL = 3,
+                    DATA_WAITING_TIME = 4;
+
+                // Parameters: angle
+                const PARAM_BALL_ANGLE = [3.2523,3.6579,1.3306,2.8974,5.8722,5.1572,4.7881,5.5772,3.6634,2.7426,1.2908,1.7889,5.0349,4.6625,
+                        0.84886,2.6675,1.9446,1.02,0.42474,3.9643,3.0298,4.6895,2.0414,3.2774,2.2237,1.5042,4.409,1.0743,5.3722,1.3745],
+                      PARAM_DIFFERENCE_ANGLE = [4.7742,2.2643,3.1932,1.6784,3.0791,0.25063,1.3283,5.7991,3.8765,3.5298,3.8877,4.6364,2.4644,
+                        5.2787,2.5486,3.0699,0.72612,2.73,5.5803,2.044,3.5914,3.7084,4.1196,2.9334,5.4251,4.1104,3.7054,5.7773,2.832,1.5855],
+                      PARAM_ROTATION_ANGLE = [4.2184,4.6772,5.4168,4.7221,2.7338,5.207,3.7009,1.0809,3.3233,4.3525,3.5112,1.3861,2.0686,
+                        3.8131,1.2261,3.5999,3.8553,5.0454,2.6049,4.4899,5.3077,0.45826,4.9187,0.75665,6.255,1.6084,5.4443,6.0872,1.3775,2.0459];
+
+                // -------------------------------------------------------------------------
+                // Variables
+                // -------------------------------------------------------------------------
+                var ctx = canvas.getContext("2d");
+                var t = 0.0;
+                var track = new Track(canvas);
+                var timer = new ClockFace(track, TIME_READY);
+                var ball = new Ball("red", track);
+                var cursor = new Ball("white", track);
+                var indicator = new Ball("white", track);
+                var gameMode = MODE_INSTRUCTIONS;
+
+
+                var instructionsDone = false;
+                var practicing = true;
+                var betPlaced = false;
+                var resultsDone = false;
+                var gameDone = false;
+                var error = 0;
+                var rmsError = 0;
+                var rotAngle = 0.0;
+                var practiceTrials = 0;
+                var trial = 0;
+                var trialData = [];
+                var data = [[]];
+                var useMirror = 0;
+
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("mousemove", mouseMoveHandler, false);
+                document.addEventListener("click", mouseClickHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if (e.keyCode === KEY_S) {
+                        if (gameMode === MODE_INSTRUCTIONS) { instructionsDone = true; }
+                    }
+                    else if(gameMode === MODE_PLAYING && e.keyCode === KEY_SPACE) {//
+                        //betPlaced = true;
+                    }
+                    else if(gameMode === MODE_RESULTS && e.keyCode === KEY_SPACE) {//
+                        // resultsDone = true;
+                        // if (trial === NUM_TRIALS_PRACTICE-1) {
+                        //     practicing = false;
+                        //     rmsError = 0;
+                        // }
+                    }
+                    //else if(gameMode === MODE_RESULTS && e.keyCode === KEY_SPACE) {
+                    //      gameDone = true;
+                    //}
+
+                }
+                function mouseMoveHandler(e) {
+
+                    if (gameMode === MODE_HIDING || gameMode === MODE_PLAYING) {
+
+                        var cursorX = e.clientX - canvas.offsetLeft;
+                        var cursorY = e.clientY - canvas.offsetTop;
+
+                        var centeredX = cursorX - CANVAS_WIDTH/2;
+                        var centeredY = cursorY - CANVAS_HEIGHT/2;
+
+                        // Calculate new angle and force it to be in [0, 2\pi)
+                        cursor.theta = Math.atan2(-centeredY, centeredX);
+                        if (cursor.theta < 0) { cursor.theta += 2*Math.PI; }
+
+                        cursor.update(0);
+
+                    }
+                }
+                function mouseClickHandler(e) {
+
+                    if (gameMode === MODE_PLAYING) {
+                        betPlaced = true;
+                    }
+                    else if (gameMode === MODE_RESULTS) {
+                        resultsDone = true;
+                        if (trial === NUM_TRIALS_PRACTICE-1) {
+                            practicing = false;
+                            rmsError = 0;
+                        }
+                    }
+                    else if (gameMode === MODE_END) {
+                        gameDone = true;
+                    }
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Game Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function(dt) {
+
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            t += dt;
+                            if (instructionsDone) {
+
+                                t = -TIME_READY;
+                                instructionsDone = false;
+                                gameMode = MODE_PRESENTING;
+                                sendRequestPost('Event_Angle', 'EndInstructions');
+                            }
+                            break;
+
+                        case MODE_PRESENTING:
+
+                            if (t === -TIME_READY) {
+
+                                timer.reset();
+                                sendRequestPost('Event_Angle', 'StartPresenting');
+
+                                // Initialize ball angle
+                                //ball.randomize();
+                                ball.omega = 0;
+                                ball.theta = PARAM_BALL_ANGLE[trial];
+                                ball.update(0);
+                                //indicator.randomize();
+                                indicator.omega = 0;
+                                indicator.theta = (ball.theta+PARAM_DIFFERENCE_ANGLE[trial]) % (2 * Math.PI);
+                                indicator.update(0);
+
+                                // Record data
+                                trialData[DATA_BALL_INIT] = ball.theta;
+                                trialData[DATA_CURSOR_INIT] = indicator.theta;
+
+                                // Update time
+                                t += dt;
+
+                            } else if (t >= TIME_PRESENT) {
+
+                                // Reset time
+                                t = 0;
+                                sendRequestPost('Event_Angle', 'EndPresenting');
+
+                                // Switch game mode
+                                gameMode = MODE_HIDING;
+                                sendRequestPost('Event_Angle', 'StartHiding');
+
+                            } else {
+
+                                // Update ball and time
+                                timer.update(dt);
+                                ball.update(dt);
+                                t += dt;
+                            }
+                            break;
+
+                        case MODE_HIDING:
+
+                            if (t >= TIME_HIDE) {
+
+                                // Rotate
+                                rotAngle = PARAM_ROTATION_ANGLE[trial];//2 * Math.PI * Math.random();
+                                ball.theta = (ball.theta + rotAngle) % (2 * Math.PI);
+                                ball.update(0);
+
+                                indicator.theta = (indicator.theta + rotAngle) % (2 * Math.PI);
+                                indicator.update(0);
+
+                                trialData[DATA_BALL_FINAL] = ball.theta;
+
+                                // Reset time
+                                t = 0;
+                                sendRequestPost('Event_Angle', 'EndHiding');
+                                // Switch game mode
+                                gameMode = MODE_PLAYING;
+
+                            } else { t += dt; }
+
+                            break;
+
+                        case MODE_PLAYING:
+
+                            t += dt;
+
+                            // Check if bet is placed
+                            if (betPlaced) {
+
+                                // Record bet
+                                trialData[DATA_CURSOR_FINAL] = cursor.theta;
+                                trialData[DATA_WAITING_TIME] = t;
+                                sendRequestPost('Event_Angle', 'betPlaced');
+
+                                data[trial] = trialData.splice(0);
+                                sendRequestPost('Data_AngleData', data[trial].toString());
+
+                                // Reset bet flag
+                                t = 0;
+                                betPlaced = false;
+
+                                // Calculate error
+                                error = calculateError(indicator, cursor);
+                                rmsError += error*error;
+                                // Change game mode
+                                gameMode = MODE_RESULTS;
+
+                            }
+                            break;
+
+                        case MODE_RESULTS:
+
+                            t += dt;
+
+                            if (resultsDone) {
+                                t = -TIME_READY;
+                                resultsDone = false;
+
+                                trial += 1;
+
+                                if (practicing) {
+                                    practiceTrials += 1;
+                                    rmsError = 0;
+                                }
+                                if (trial - practiceTrials > NUM_TRIALS_GAME) {
+                                    sendRequestPost('Data_Angle_practiceTrails:', practiceTrials+1);
+                                    sendRequestPost('Data_Angle_testTrials:',trial - practiceTrials - 1);
+                                    trial = 0;
+                                    rmsError = Math.sqrt(rmsError / NUM_TRIALS_GAME);
+                                    gameMode = MODE_END;
+
+                                } else { gameMode = MODE_PRESENTING; }
+                            }
+                            break;
+
+                        case MODE_END:
+
+                            if (gameDone) {
+
+                                gameDone = false;
+                                console.log(data)
+                                return data;
+                            }
+                            break;
+                    }
+                    return;
+                };
+
+                function calculateError(indicator, cursor) {
+
+                    //var theta_ind = indicator.theta;
+                    //var theta_cur = cursor.theta;
+                    //var dTheta = Math.PI - theta_ind;
+                    //theta_ind += dTheta;
+                    //theta_cur = (theta_cur + dTheta) % (2 * Math.PI);
+                    //if (theta_cur < 0) { theta_cur += 2 * Math.PI; }
+                    mirror_ind = (ball.theta * 2 - indicator.theta) % (2 * Math.PI);
+                    if (mirror_ind < 0) { mirror_ind += 2 * Math.PI; }
+                    min_angle_original = Math.min(Math.abs(indicator.theta - cursor.theta), 2 * Math.PI - Math.abs(indicator.theta - cursor.theta));
+                    min_angle_mirror = Math.min(Math.abs(mirror_ind - cursor.theta), 2 * Math.PI - Math.abs(mirror_ind - cursor.theta));
+                    angle_cur_ball = Math.min(Math.abs(ball.theta - cursor.theta), 2 * Math.PI - Math.abs(ball.theta - cursor.theta));
+                    angle_ind_ball = Math.min(Math.abs(ball.theta - indicator.theta), 2 * Math.PI - Math.abs(ball.theta - indicator.theta));
+
+                    if (min_angle_original < min_angle_mirror) {
+                        return 180 / Math.PI * min_angle_original * Math.sign(angle_cur_ball - angle_ind_ball);
+                    } else {
+                        indicator.theta = (ball.theta * 2 -  indicator.theta) % (2 * Math.PI);
+                        if (indicator.theta < 0) { indicator.theta += 2 * Math.PI; }
+                        indicator.update(0);
+                        return 180 / Math.PI * min_angle_mirror *  Math.sign(angle_cur_ball - angle_ind_ball);
+                    }
+
+                    //return 180 / Math.PI * (theta_cur - theta_ind);
+                    return;
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Rendering on Canvas
+                // -------------------------------------------------------------------------
+                this.render = function(dt) {
+
+                    // format text
+                    ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            // draw heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Angle Matching", HEADING_X, HEADING_Y);
+
+                            // draw instructions
+                            ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Observe the arrangement of the red and the white ball on the", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE+LINE_SPACING);
+                            ctx.fillText("ring. After a few seconds, we hide everything from view and", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 2*LINE_SPACING);
+                            ctx.fillText("rotate the picture by a random amount. We then reveal the", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 3*LINE_SPACING);
+                            ctx.fillText("rotated ring and the red ball, but the white ball is missing.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 4*LINE_SPACING);
+                            ctx.fillText("Your goal is to put the white ball back in the correct position", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 6*LINE_SPACING);
+                            ctx.fillText("accounting for the rotation. Use the mouse to move the white", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 7*LINE_SPACING);
+                            ctx.fillText("ball along the ring and click to place it.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 8*LINE_SPACING);
+
+                            if ( Math.sin(3*Math.PI*BLINK_FREQ * t) >= 0 ) {
+                                ctx.font = (TEXT_SIZE+2).toString() + "px Open Sans";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillText("-- Press S to start! --", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 10.5*LINE_SPACING);
+                            }
+
+                            break;
+
+                        case MODE_PRESENTING:
+
+                            track.draw(ctx);
+                            if (t < 0) {
+
+                                timer.draw(ctx);
+
+                                ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Get ready!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            }
+                            else {
+                                ball.draw(ctx);
+                                indicator.draw(ctx);
+                            }
+
+                            if (practicing) {
+
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Observe the arrangement of the red and the white ball.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+
+                            break;
+
+                        case MODE_HIDING:
+
+                            if (practicing) {
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+
+                            break;
+
+                        case MODE_PLAYING:
+
+                            track.draw(ctx);
+                            ball.draw(ctx);
+                            cursor.draw(ctx);
+
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Click to place the white ball.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+
+                            if (practicing) {
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+
+                            break;
+
+                        case MODE_RESULTS:
+
+                            track.draw(ctx);
+                            ball.draw(ctx);
+                            if (Math.sin(2*Math.PI*BLINK_FREQ*t) >= 0) { indicator.draw(ctx); }
+                            cursor.draw(ctx);
+
+                            // report error to player
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Error: "+error.toFixed(2)+"\xB0", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+
+                            if (practicing) {
+                                ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                                if (trial < NUM_TRIALS_PRACTICE-1) {
+                                  if (trial<NUM_TRIALS_PRACTICE-2) {
+                                    ctx.fillText("Click to practice again. "+(NUM_TRIALS_PRACTICE-trial-1).toString()+" practice trials left", CANVAS_WIDTH/2, CANVAS_HEIGHT - 1.1*TEXT_SIZE);
+                                  } else {
+                                    ctx.fillText("Click to practice again. "+(NUM_TRIALS_PRACTICE-trial-1).toString()+" practice trial left", CANVAS_WIDTH/2, CANVAS_HEIGHT - 1.1*TEXT_SIZE);
+                                  }
+                                } else {
+                                    ctx.fillText("0 practice left. Click to continue to the real game.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }
+
+                                ctx.font = Math.round(TEXT_SIZE*0.51).toString() + "px Raleway";
+                                ctx.fillText("Positive error means your angle estimation is too large, and negative error means the estimation is too small.", CANVAS_WIDTH/2, CANVAS_HEIGHT -0.32 * TEXT_SIZE);
+                                  //ctx.fillText("negative error means your angle estimation is too small.", CANVAS_WIDTH/2, CANVAS_HEIGHT + 1*TEXT_SIZE);
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+                            else {
+                              ctx.fillText((NUM_TRIALS_GAME-trial+practiceTrials).toString()+" trials left. Click to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                            }
+
+                            break;
+
+                        case MODE_END:
+
+                            // display end message
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Average Error:", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - LINE_SPACING);
+                            ctx.fillText(rmsError.toFixed(2)+"\xB0", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            ctx.fillText("Click to Continue!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + LINE_SPACING);
+
+                            break;
+                    }
+
+                };
+
+            };
+
+            speedMatchingGame = function(canvas) {
+
+                // -------------------------------------------------------------------------
+                // Constants
+                // -------------------------------------------------------------------------
+
+                // Game parameters
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height,
+                    TIME_PRESENT = 2.0, //3.0
+                    TIME_READY = 1.5,//2.0
+                    TIME_HIDE = 0.5,
+                    BLINK_FREQ = 0.8,
+                    BUTTON_HOLD_TIME = 0.1,
+                    NUM_TRIALS_GAME = NUM_TRIALS_SPEED,
+                    NUM_TRIALS_PRACTICE = NUM_PRACTICE_SPEED,
+                    CURSOR_ACCEL = 10 * Math.PI / 180,
+                    CURSOR_ACCEL_FAST = 50 * Math.PI / 180,
+                    DELTA_OMEGA = Math.PI / 180;
+
+                // Text properties
+                const
+                    TEXT_SIZE = 1/19 * CANVAS_HEIGHT,
+                    HEADING_SIZE = 1.676 * TEXT_SIZE,
+                    TITLE_SIZE = 2 * TEXT_SIZE,
+                    LINE_SPACING = 1.2 * TEXT_SIZE,
+                    HEADING_X = 0.05 * CANVAS_WIDTH,
+                    HEADING_Y = HEADING_X;
+                    INDENTATION_X = 0.05*CANVAS_WIDTH,
+                    MAINTEXT_X = HEADING_X+INDENTATION_X;
+
+                // Game modes
+                const
+                    MODE_INSTRUCTIONS = 0,
+                    MODE_TUTORIAL = 1,
+                    MODE_PRESENTING = 2,
+                    MODE_HIDING = 3,
+                    MODE_PLAYING = 4,
+                    MODE_RESULTS = 5,
+                    MODE_END = 6;
+
+                // Key codes
+                const
+                    KEY_LEFT = 37,
+                    KEY_UP = 38,
+                    KEY_RIGHT = 39,
+                    KEY_DOWN = 40,
+                    KEY_SPACE = 32,
+                    KEY_R = 82,
+                    KEY_S = 83;
+
+                // Data indices
+                const
+                    DATA_OMEGA_INIT = 0,
+                    DATA_OMEGA_BET = 1,
+                    DATA_WAITING_TIME = 2;
+
+                // Fixed speed parameters
+                const
+                    PARAM_SPEED_SPEED = [-0.77031,-2.4592,3.4321,1.7337,-2.038,-0.078003,0.4964,2.7376,0.89914,-0.95361,-2.2677,0.96217,-0.22018,2.8883,
+                      -1.4798,-1.7187,1.5747,-0.71163,-1.5623,1.8945,0.3384,-2.4571,2.7427,1.179,1.6129,-1.6673,-1.5631,-1.2795,1.181,1.2771],
+                    PARAM_SPEED_INITTHETA = [3.534,4.4735,2.8338,1.4769,2.5702,1.8925,0.10841,0.10314,4.5987,0.57038,1.2925,4.4283,1.378,3.4838,
+                      2.1987,6.1494,5.8346,2.6905,3.4878,4.3435,4.2471,1.107,3.5687,5.3544,0.16689,5.0444,4.7824,0.57648,4.2885,3.1396];
+
+                // -------------------------------------------------------------------------
+                // Variables
+                // -------------------------------------------------------------------------
+                var ctx = canvas.getContext("2d");
+                var t = 0.0;
+                var track = new Track(canvas);
+                var timer = new ClockFace(track, TIME_READY);
+                var ball = new Ball("red", track);
+                var cursor = new Ball("white", track);
+                var speedUp = new speedButton(-Math.PI/18, "<", track);
+                var speedDown = new speedButton(Math.PI/18, ">", track);
+                var speedUpUp = new speedButton(-Math.PI/6, "<<", track);
+                var speedDownDown = new speedButton(Math.PI/6, ">>", track);
+                var gameMode = MODE_INSTRUCTIONS;
+
+                var rightPressed = false;
+                var leftPressed = false;
+                var upPressed = false;
+                var downPressed = false;
+
+                var instructionsDone = false;
+                var tutorialDone = false;
+                var practicing = true;
+                var betPlaced = false;
+                var practiceReset = true;
+                var resultsDone = false;
+                var gameDone = false;
+                var buttonTime = 0;
+                var error = 0;
+                var rmsError = 0;
+                var trial = 0;
+                var practiceTrials = 0;
+                var trialData = [];
+                var data = [[]];
+
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("keyup", keyUpHandler, false);
+                document.addEventListener("mousedown", mouseDownHandler, false);
+                document.addEventListener("mouseup", mouseUpHandler, false);
+
+                function keyDownHandler(e) {
+                    if(e.keyCode === KEY_RIGHT) {
+                        rightPressed = true;
+                    }
+                    else if(e.keyCode === KEY_LEFT) {
+                        leftPressed = true;
+                    }
+                    else if(e.keyCode === KEY_UP) {
+                        upPressed = true;
+                    }
+                    else if(e.keyCode === KEY_DOWN) {
+                        downPressed = true;
+                    }
+                    else if (e.keyCode === KEY_S) {
+                        if (gameMode === MODE_INSTRUCTIONS) { instructionsDone = true; }
+                        else if (gameMode === MODE_TUTORIAL) { tutorialDone = true; }
+                    }
+                    else if(e.keyCode === KEY_R && gameMode === MODE_TUTORIAL) {
+                        practiceReset = true;
+                    }
+                    else if(gameMode === MODE_PLAYING && e.keyCode === KEY_SPACE) {
+                        betPlaced = true;
+                    }
+                    else if(gameMode === MODE_RESULTS && e.keyCode === KEY_SPACE) {
+                        resultsDone = true;
+                        if (trial === NUM_TRIALS_PRACTICE - 1) {
+                            practicing = false;
+                            rmsError = 0;
+                        }
+                    }
+                    else if(gameMode === MODE_END && e.keyCode === KEY_SPACE) {
+                        gameDone = true;
+                    }
+
+                }
+                function keyUpHandler(e) {
+                    if(e.keyCode === KEY_RIGHT) {
+                        rightPressed = false;
+                    }
+                    else if(e.keyCode === KEY_LEFT) {
+                        leftPressed = false;
+                    }
+                    else if(e.keyCode === KEY_UP) {
+                        upPressed = false;
+                    }
+                    else if(e.keyCode === KEY_DOWN) {
+                        downPressed = false;
+                    }
+                }
+                function mouseDownHandler(e) {
+
+                    if (gameMode === MODE_TUTORIAL || gameMode === MODE_PLAYING) {
+
+                        var cursorX = e.clientX - canvas.offsetLeft;
+                        var cursorY = e.clientY - canvas.offsetTop;
+
+                        var centeredX = cursorX - CANVAS_WIDTH/2;
+                        var centeredY = cursorY - CANVAS_HEIGHT/2;
+
+                        var rMouse = Math.sqrt(Math.pow(centeredX,2) + Math.pow(centeredY,2));
+                        var thetaMouse = Math.atan2(-centeredY, centeredX);
+
+                        if (speedUp.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            cursor.omega += DELTA_OMEGA;
+                            speedUp.pressed = true;
+                        }
+                        else if (speedDown.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            cursor.omega += -DELTA_OMEGA;
+                            speedDown.pressed = true;
+                        }
+                        else if (speedUpUp.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            cursor.omega += 2*DELTA_OMEGA;
+                            speedUpUp.pressed = true;
+                        }
+                        else if (speedDownDown.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            cursor.omega += -2*DELTA_OMEGA;
+                            speedDownDown.pressed = true;
+                        }
+                    }
+                }
+                function mouseUpHandler(e) {
+
+                    if (gameMode === MODE_RESULTS) {
+                        resultsDone = true;
+                        if (trial === NUM_TRIALS_PRACTICE - 1) {
+                            practicing = false;
+                            rmsError = 0;
+                        }
+                    }
+                    else if (gameMode === MODE_END) {
+                        gameDone = true;
+                    } else {
+
+                        if (speedUp.pressed) {
+                            speedUp.pressed = false;
+                        }
+                        else if (speedDown.pressed) {
+                            speedDown.pressed = false;
+                        }
+                        else if (speedUpUp.pressed) {
+                            speedUpUp.pressed = false;
+                        }
+                        else if (speedDownDown.pressed) {
+                            speedDownDown.pressed = false;
+                        }
+                    }
+                }
+
+                function speedButton(theta, text, track) {
+
+                    const
+                        BUTTON_COLOR = "#D3D3D3",
+                        BUTTON_COLOR_PRESSED = "#999999";
+
+                    this.pressed = false;
+                    this.dr = 0.5 * pixelsPerInch;
+                    this.r = track.radius + 0.2 * pixelsPerInch + this.dr/2;
+
+                    this.theta = theta;
+                    this.dTheta = Math.PI / 12,
+
+                    // This function checks if the mouse is over the button
+                    this.mouseIn = function(rMouse, thetaMouse) {
+
+                        if ( Math.abs(rMouse - this.r) <= this.dr/2 ) {
+
+                            if ( Math.abs(thetaMouse - this.theta) <= this.dTheta/2 ) {
+
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    this.draw = function(ctx) {
+
+                        ctx.beginPath();
+                        ctx.arc(track.x, track.y, this.r, this.theta - this.dTheta/2, this.theta + this.dTheta/2);
+                        ctx.lineWidth = this.dr;
+                        if (this.pressed) { ctx.strokeStyle = BUTTON_COLOR_PRESSED; }
+                        else { ctx.strokeStyle = BUTTON_COLOR; }
+
+                        ctx.stroke();
+                        ctx.closePath();
+
+                        ctx.save();
+                        ctx.translate(track.x, track.y);
+                        ctx.rotate(Math.PI/2 + this.theta);
+                        ctx.font = "bold" + TEXT_SIZE.toString() + "px Raleway";
+                        ctx.fillStyle = "white";
+                        ctx.textBaseline = "middle";
+                        ctx.textAlign = "center";
+                        ctx.fillText(text, 0 , -this.r);
+                        ctx.restore();
+                    };
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Game Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function(dt) {
+
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            t += dt;
+                            if (instructionsDone) {
+
+                                t = 0;
+                                instructionsDone = false;
+                                gameMode = MODE_TUTORIAL;
+                                sendRequestPost('Event_Speed', 'EndInstructions');
+                                sendRequestPost('Event_Speed', 'StartTutorial');
+                            }
+                            break;
+
+                        case MODE_TUTORIAL:
+
+                            if (practiceReset) {
+
+                                // Initialize ball and cursor
+                                //ball.randomize();
+                                ball.omega = 2.5;
+                                ball.omega = DELTA_OMEGA * Math.round(ball.omega / DELTA_OMEGA);
+                                ball.theta = 1;
+                                ball.update(0);
+                                cursor.randomize();
+                                cursor.omega = 0;
+
+                                practiceReset = false;
+
+                            } else if (tutorialDone) {
+
+                                t = -TIME_READY;
+                                buttonTime = 0;
+                                tutorialDone = false;
+                                gameMode = MODE_PRESENTING;
+                                sendRequestPost('Event_Speed', 'EndTutorial');
+                                break;
+
+                            } else {
+
+                                // Adjust cursor speed
+                                if (buttonTime >= BUTTON_HOLD_TIME) {
+                                    if (speedUp.pressed) {
+                                        cursor.omega += DELTA_OMEGA;
+                                    }
+                                    else if (speedDown.pressed) {
+                                        cursor.omega -= DELTA_OMEGA;
+                                    }
+                                    else if (speedUpUp.pressed) {
+                                        cursor.omega += 2 * DELTA_OMEGA;
+                                    }
+                                    else if (speedDownDown.pressed) {
+                                        cursor.omega -= 2 * DELTA_OMEGA;
+                                    }
+                                }
+                                // Update ball and cursor
+                                t += dt;
+                                buttonTime += dt;
+                                ball.update(dt);
+                                cursor.update(dt);
+                            }
+
+                            error = 100 * (cursor.omega - ball.omega) / ball.omega;
+                            break;
+
+                        case MODE_PRESENTING:
+
+                            if (t === -TIME_READY) {
+
+                                timer.reset();
+
+                                // Initialize ball angle and speed
+                                //ball.randomize();
+                                //ball.omega = Math.PI / 180 * Math.round(180 / Math.PI * ball.omega);
+                                ball.omega = PARAM_SPEED_SPEED[trial];
+                                ball.omega = Math.PI / 180 * Math.round(180 / Math.PI * ball.omega);
+                                ball.theta = PARAM_SPEED_INITTHETA[trial];
+                                ball.update(0);
+
+                                // Record data
+                                trialData[DATA_OMEGA_INIT] = ball.omega;
+
+                                sendRequestPost('Event_Speed', 'StartPresenting');
+                                // Update time
+                                t += dt;
+
+                            } else if (t >= TIME_PRESENT) {
+
+                                // Reset time
+                                sendRequestPost('Event_Speed', 'EndPresenting');
+                                t = 0;
+                                sendRequestPost('Event_Speed', 'StartHiding');
+                                // Switch game mode
+                                gameMode = MODE_HIDING;
+
+                            } else {
+
+                                // Update ball and time
+                                timer.update(dt);
+                                ball.update(dt);
+                                t += dt;
+                            }
+                            break;
+
+                        case MODE_HIDING:
+
+                            if (t >= TIME_HIDE) {
+
+                                // Reset time
+                                t = 0;
+
+                                // Initialize cursor
+                                cursor.randomize();
+                                cursor.omega = 0;
+                                sendRequestPost('Event_Speed', 'EndHiding');
+                                sendRequestPost('Event_Speed', 'StartMatching');
+                                // Switch game mode
+                                gameMode = MODE_PLAYING;
+
+                            } else {
+
+                                // Update ball and time
+                                ball.update(dt);
+                                t += dt;
+
+                            }
+                            break;
+
+                        case MODE_PLAYING:
+
+                            // Adjust cursor speed
+                            if (buttonTime >= BUTTON_HOLD_TIME) {
+                                if (speedUp.pressed) {
+                                    cursor.omega += DELTA_OMEGA;
+                                }
+                                else if (speedDown.pressed) {
+                                    cursor.omega -= DELTA_OMEGA;
+                                }
+                                else if (speedUpUp.pressed) {
+                                    cursor.omega += 5 * DELTA_OMEGA;
+                                }
+                                else if (speedDownDown.pressed) {
+                                    cursor.omega -= 5 * DELTA_OMEGA;
+                                }
+                            }
+
+                            // Check if bet is placed
+                            if (betPlaced) {
+
+                                // Record bet
+                                trialData[DATA_OMEGA_BET] = cursor.omega;
+                                trialData[DATA_WAITING_TIME] = t;
+                                sendRequestPost('Event_Speed', 'DoneMatching');
+                                data[trial] = trialData.splice(0);
+                                sendRequestPost('Data_SpeedData', data[trial].toString());
+
+                                // Reset bet flag
+                                t = 0;
+                                buttonTime = 0;
+                                betPlaced = false;
+
+                                // Set ball to be at cursor location
+                                ball.theta = cursor.theta;
+                                ball.update(0);
+
+                                // Calculate error
+                                error = 100 * (cursor.omega - ball.omega) / ball.omega;
+                                rmsError += error*error;
+
+                                // Change game mode
+                                gameMode = MODE_RESULTS;
+
+                            } else {
+
+                                // Update game
+                                t += dt;
+                                buttonTime += dt;
+                                ball.update(dt);
+                                cursor.update(dt);
+
+                            }
+                            break;
+
+                        case MODE_RESULTS:
+
+                            ball.update(dt);
+                            cursor.update(dt);
+
+                            if (resultsDone) {
+
+                                resultsDone = false;
+
+                                t = -TIME_READY;
+                                trial += 1;
+
+                                if (practicing) {
+                                    practiceTrials += 1;
+                                    rmsError = 0;
+                                }
+                                if (trial - practiceTrials > NUM_TRIALS_GAME) {
+                                    sendRequestPost('Data_Speed_practiceTrials', practiceTrials + 1);
+                                    sendRequestPost('Data_Speed_trials', trial - practiceTrials - 1);
+                                    trial = 0;
+                                    rmsError = Math.sqrt(rmsError / NUM_TRIALS_GAME);
+                                    gameMode = MODE_END;
+
+                                } else {
+
+                                    gameMode = MODE_PRESENTING;
+                                }
+                            }
+                            break;
+
+                        case MODE_END:
+
+                            if (gameDone) {
+                                sendRequestPost('Event_Speed', 'EndSpeedMatching');
+                                gameDone = false;
+
+                                return data;
+                            }
+                            break;
+                    }
+                    return;
+                };
+
+                // -------------------------------------------------------------------------
+                // Rendering on Canvas
+                // -------------------------------------------------------------------------
+                this.render = function(dt) {
+
+                    // format text
+                    ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            ctx.font = TITLE_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Speed Matching", HEADING_X, HEADING_Y);
+
+                            ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Watch how fast the red ball moves around the ring. After a", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE+LINE_SPACING);
+                            ctx.fillText("few seconds, we hide the red ball and present a motionless", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 2*LINE_SPACING);
+                            ctx.fillText("white ball along with four buttons on the right side of the", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 3*LINE_SPACING);
+                            ctx.fillText("ring that you can use to adjust its speed.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 4*LINE_SPACING);
+                            ctx.fillText("Make the white ball move at the same speed as the red ball.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 6*LINE_SPACING);
+                            ctx.fillText("Press space once you think you have matched their speeds.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 8*LINE_SPACING);
+
+                            if ( Math.sin(2*Math.PI*BLINK_FREQ * t) >= 0 ) {
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillText("-- Press S to start! --", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 10.5*LINE_SPACING);
+                            }
+
+                            break;
+
+                        case MODE_TUTORIAL:
+
+                            track.draw(ctx);
+                            ball.draw(ctx);
+                            cursor.draw(ctx);
+                            speedUp.draw(ctx);
+                            speedDown.draw(ctx);
+                            speedUpUp.draw(ctx);
+                            speedDownDown.draw(ctx);
+
+                            // display heading
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Tutorial Mode", HEADING_X, HEADING_Y);
+
+                            // display error and instructions
+                            ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Error: "+error.toFixed(2)+"%", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            ctx.fillText("Press R to reset speed. Press S to play.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE + LINE_SPACING/5*2);
+                            ctx.fillText("Press the buttons to adjust the speed of the white ball.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE - LINE_SPACING/5*3);
+
+                            break;
+
+                        case MODE_PRESENTING:
+
+                            track.draw(ctx);
+                            if (t < 0) {
+
+                                timer.draw(ctx);
+
+                                ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Get ready!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            }
+                            else { ball.draw(ctx); }
+
+                            if (practicing) {
+
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Observe the speed of the red ball.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+                            break;
+
+                        case MODE_HIDING:
+
+                            track.draw(ctx);
+
+                            if (practicing) {
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+
+                            break;
+
+                        case MODE_PLAYING:
+
+                            track.draw(ctx);
+                            cursor.draw(ctx);
+                            speedUp.draw(ctx);
+                            speedDown.draw(ctx);
+                            speedUpUp.draw(ctx);
+                            speedDownDown.draw(ctx);
+
+                            // display instructions
+                            ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Press the space bar when matched.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+
+                            if (practicing) {
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            }
+
+                            break;
+
+                        case MODE_RESULTS:
+
+                            track.draw(ctx);
+                            ball.draw(ctx);
+                            cursor.draw(ctx);
+
+                            // report error to player
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Error: "+error.toFixed(2)+"%", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+
+                            if (practicing) {
+
+                                ctx.fillStyle = "black";
+                                if (trial < NUM_TRIALS_PRACTICE-1) {
+                                  if (NUM_TRIALS_PRACTICE-trial-1 === 1) {
+                                    ctx.fillText("1 practice left. Press SPACE to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                  } else {
+                                    ctx.fillText((NUM_TRIALS_PRACTICE-trial-1).toString()+" practices left. Press SPACE to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                  }
+                                } else {
+                                  ctx.fillText("0 practice left. Press SPACE to continue to real game.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            } else {
+                                if (NUM_TRIALS_GAME-trial+practiceTrials > 1) {
+                                  ctx.fillText((NUM_TRIALS_GAME-trial+practiceTrials).toString()+" trials left. Press SPACE to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                } else {
+                                  ctx.fillText((NUM_TRIALS_GAME-trial+practiceTrials).toString()+" trial left. Press SPACE to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }
+                            }
+
+                            break;
+
+                        case MODE_END:
+
+                            // display end message
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Average Error:", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - LINE_SPACING);
+                            ctx.fillText(rmsError.toFixed(2)+"%", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            ctx.fillText("Click to Continue!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + LINE_SPACING);
+                            break;
+                    }
+
+                };
+
+            };
+
+            rouletteGame = function(canvas) {
+
+                // -------------------------------------------------------------------------
+                // Constants
+                // -------------------------------------------------------------------------
+
+                // Game parameters
+                const
+                    CANVAS_WIDTH = canvas.width,
+                    CANVAS_HEIGHT = canvas.height,
+                    TIME_READY = 1.5,//2.0
+                    BLINK_FREQ = 0.8,
+                    BUTTON_HOLD_TIME = 0.1,
+                    NUM_TRIALS_GAME = NUM_TRIALS_ROULETTE,
+                    NUM_TRIALS_PRACTICE = NUM_PRACTICE_ROULETTE,
+                    DELTA_TIME = 0.1,
+                    DECAY_RATE = 1.5;
+
+                // Text properties
+                const
+                    TEXT_SIZE = 1/19 * CANVAS_HEIGHT,
+                    TEXT_SIZE_SMALL = TEXT_SIZE/1.5,
+                    HEADING_SIZE = 1.676 * TEXT_SIZE,
+                    TITLE_SIZE = 2 * TEXT_SIZE,
+                    LINE_SPACING = 1.2 * TEXT_SIZE,
+                    HEADING_X = 0.05 * CANVAS_WIDTH,
+                    HEADING_Y = HEADING_X;
+                    INDENTATION_X = 0.05*CANVAS_WIDTH,
+                    MAINTEXT_X = HEADING_X+INDENTATION_X;
+
+                // Game modes
+                const
+                    MODE_INSTRUCTIONS = 0,
+                    MODE_TUTORIAL = 1,
+                    MODE_PLAYING = 2,
+                    MODE_RESULTS = 3,
+                    MODE_END = 4;
+
+                // Key codes
+                const
+                    KEY_LEFT = 37,
+                    KEY_UP = 38,
+                    KEY_RIGHT = 39,
+                    KEY_DOWN = 40,
+                    KEY_SPACE = 32,
+                    KEY_R = 82,
+                    KEY_S = 83;
+
+                // Data indices
+                const
+                    DATA_THETA_INIT = 0,
+                    DATA_OMEGA_INIT = 1,
+                    DATA_THETA_FINAL = 2,
+                    DATA_THETA_BET = 3,
+                    DATA_TIME_BET = 4,
+                    DATA_REWARD = 5;
+
+                const
+                    PARAM_ROULETTE_INITANGLE = [4.9023,0.50973,5.8395,4.8739,3.0586,2.7386,2.8072,1.9249,3.1951,3.2093,5.1373,4.9941,4.0484,2.3789,5.0993,
+                      3.3478,2.2037,5.8999,5.5037,3.4567,3.9111,3.6885,1.3053,1.8928,2.9589,1.4482,5.3049,1.2237,1.4195,1.0726,1.4305,2.7376,1.9547,5.8018,2.7031],
+                    PARAM_ROULETTE_INITSPEED = [1.8536,-2.9991,-0.034121,-1.5728,0.69129,-4.283,-2.4655,2.9487,-0.82189,-1.3364,-1.5076,-2.7039,-1.5028,2.3575,-0.045218,
+                      1.4365,-1.0266,-0.36909,-2.1886,1.9914,-1.7745,-0.58148,-2.7293,2.0509,1.4843,1.7653,-1.5167,0.21798,-1.4961,1.0198,-0.89081,0.73618,-1.2797,0.0023001,2.5868],
+                    PARAM_ROULETTE_TAUR = [1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,
+                      1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5];
+
+
+                // -------------------------------------------------------------------------
+                // Variables
+                // -------------------------------------------------------------------------
+                var ctx = canvas.getContext("2d");
+                var TAU_R = 0;
+                var t = 0.0;
+                var buttonTime = 0.0;
+                var track = new Track(canvas);
+                var timer = new ClockFace(track, TIME_READY);
+                var ball = new Ball("red", track, TAU_R);
+                var cursor = new Ball("white", track);
+                var indicator = new Ball("red", track);
+                var timeUp = new Button(-Math.PI/18, "<", track);
+                var timeDown = new Button(Math.PI/18, ">", track);
+                var gameMode = MODE_INSTRUCTIONS;
+
+                var instructionsDone = false;
+                var tutorialDone = false;
+                var practicing = true;
+                var betPlaced = false;
+                var resultsDone = false;
+                var gameDone = false;
+
+                var score = 0;
+                var totalReward = 0;
+                var practiceTrials = 0;
+                var trial = 0;
+                var trialData = [];
+                var data = [[]];
+
+
+                // -------------------------------------------------------------------------
+                // Event Listeners
+                // -------------------------------------------------------------------------
+                document.addEventListener("keydown", keyDownHandler, false);
+                document.addEventListener("mousemove", mouseMoveHandler, false);
+                //document.addEventListener("click", mouseClickHandler, false);
+                document.addEventListener("mousedown", mouseDownHandler, false);
+                document.addEventListener("mouseup", mouseUpHandler, false);
+
+                function keyDownHandler(e) {
+
+                    if (e.keyCode === KEY_S) {
+                        if (gameMode === MODE_INSTRUCTIONS) { instructionsDone = true; }
+                    }
+                    else if (e.keyCode === KEY_SPACE) {
+
+                        if(gameMode === MODE_TUTORIAL) { tutorialDone = true; }
+                        else if (gameMode === MODE_END) {
+                          sendRequestPost('Event_Roulette','Completion_Link')
+                          window.location.href = 'https://app.prolific.co/submissions/complete?cc=7E937D2D';//'https://stackoverflow.com/questions/1226714/how-to-get-the-browser-to-navigate-to-url-in-javascript';
+                        }
+
+                    }
+                }
+                function mouseMoveHandler(e) {
+
+                    if (gameMode !== MODE_RESULTS) {
+
+                        var cursorX = e.clientX - canvas.offsetLeft;
+                        var cursorY = e.clientY - canvas.offsetTop;
+
+                        var centeredX = cursorX - CANVAS_WIDTH/2;
+                        var centeredY = cursorY - CANVAS_HEIGHT/2;
+
+                        cursor.theta = Math.atan2(-centeredY, centeredX);
+                        cursor.update(0);
+
+                    }
+                }
+                /*function mouseClickHandler(e) {
+
+                    if (gameMode === MODE_PLAYING) {
+                        if (t > 0) { betPlaced = true; }
+                    }
+                    else if (gameMode === MODE_END) {
+                        gameDone = true;
+                    }
+
+                }*/
+                function mouseDownHandler(e) {
+
+                    if (gameMode === MODE_TUTORIAL || gameMode === MODE_PLAYING) {
+
+                        var cursorX = e.clientX - canvas.offsetLeft;
+                        var cursorY = e.clientY - canvas.offsetTop;
+
+                        var centeredX = cursorX - CANVAS_WIDTH/2;
+                        var centeredY = cursorY - CANVAS_HEIGHT/2;
+
+                        var rMouse = Math.sqrt(Math.pow(centeredX,2) + Math.pow(centeredY,2));
+                        var thetaMouse = Math.atan2(-centeredY, centeredX);
+
+                        if (timeUp.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            t += DELTA_TIME;
+                            timeUp.pressed = true;
+                        }
+                        else if (timeDown.mouseIn(rMouse, -thetaMouse)) {
+                            buttonTime = 0;
+                            t = Math.max(0, t - DELTA_TIME);
+                            timeDown.pressed = true;
+                        }
+                    }
+                }
+                function mouseUpHandler(e) {
+                    if (gameMode === MODE_PLAYING) {
+                        if (t > 0) { betPlaced = true; }
+                    }
+                    else if (gameMode === MODE_RESULTS) {
+                        resultsDone = true;
+                        if (trial === NUM_TRIALS_PRACTICE - 1) {
+                            practicing = false;
+                            rmsError = 0;
+                        }
+                    }
+                    else if (gameMode === MODE_END) {
+                        gameDone = true;
+                    }
+                    else if (gameMode === MODE_TUTORIAL) {
+                        if (timeUp.pressed) {
+                            timeUp.pressed = false;
+                        }
+                        else if (timeDown.pressed) {
+                            timeDown.pressed = false;
+                        }
+                    }
+
+                }
+
+                function reward(ball, cursor, t) {
+
+                    var error = ball.theta_f - cursor.theta;
+                    //return 1000 * Math.exp(-t/TAU_R) * (1 + Math.cos(error)) / 2;
+                    //return 500 * Math.pow(2,-t/2) * (1 + Math.cos(error));
+                    return 1000 * Math.pow(DECAY_RATE,-t) * Math.pow(Math.cos(error / 2), 10);
+
+                }
+
+                function Button(theta, text, track) {
+
+                    const
+                        BUTTON_COLOR = "#D3D3D3",
+                        BUTTON_COLOR_PRESSED = "#999999";
+
+                    this.pressed = false;
+                    this.dr = 0.5 * pixelsPerInch;
+                    this.r = track.radius + 0.2 * pixelsPerInch + this.dr/2;
+
+                    this.theta = theta;
+                    this.dTheta = Math.PI / 12,
+
+                    // This function checks if the mouse is over the button
+                    this.mouseIn = function(rMouse, thetaMouse) {
+
+                        if ( Math.abs(rMouse - this.r) <= this.dr/2 ) {
+
+                            if ( Math.abs(thetaMouse - this.theta) <= this.dTheta/2 ) {
+
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+
+                    this.draw = function(ctx) {
+
+                        ctx.beginPath();
+                        ctx.arc(track.x, track.y, this.r, this.theta - this.dTheta/2, this.theta + this.dTheta/2);
+                        ctx.lineWidth = this.dr;
+                        if (this.pressed) { ctx.strokeStyle = BUTTON_COLOR_PRESSED; }
+                        else { ctx.strokeStyle = BUTTON_COLOR; }
+
+                        ctx.stroke();
+                        ctx.closePath();
+
+                        ctx.save();
+                        ctx.translate(track.x, track.y);
+                        ctx.rotate(Math.PI/2 + this.theta);
+                        ctx.font = "bold" + TEXT_SIZE.toString() + "px Raleway";
+                        ctx.fillStyle = "white";
+                        ctx.textBaseline = "middle";
+                        ctx.textAlign = "center";
+                        ctx.fillText(text, 0 , -this.r);
+                        ctx.restore();
+                    };
+
+                }
+
+                // -------------------------------------------------------------------------
+                // Game Logic
+                // -------------------------------------------------------------------------
+                this.updateState = function(dt) {
+
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            t += dt;
+                            if (instructionsDone) {
+
+                                // reset time and instructions flag
+                                t = 0;
+                                instructionsDone = false;
+
+                                // update balls so they don't appear at corner of screen
+                                ball.theta = Math.PI;
+                                ball.theta_f = Math.PI;
+                                indicator.theta = Math.PI;
+                                indicator.theta_f = Math.PI;
+                                ball.update(0);
+                                cursor.update(0);
+                                indicator.update(0);
+
+                                // change game mode
+                                gameMode = MODE_TUTORIAL;
+                                sendRequestPost('Event_Roulette', 'StartTutorial');
+                                sendRequestPost('Data_Roulette_taur', TAU_R);
+                                sendRequestPost('Data_Roulette_decayrate',DECAY_RATE);
+                            }
+                            break;
+
+                        case MODE_TUTORIAL:
+
+                            if (tutorialDone) {
+
+                                t = -TIME_READY;
+                                tutorialDone = false;
+                                sendRequestPost('Event_Roulette', 'EndTutorial');
+                                gameMode = MODE_PLAYING;
+
+                                break;
+
+                            } else {
+
+                                // Update ball
+                                ball.update(dt);
+                                buttonTime += dt;
+
+                                // Adjust cursor speed
+                                if (buttonTime >= BUTTON_HOLD_TIME) {
+                                    if (timeUp.pressed) {
+                                        t += DELTA_TIME;
+                                    }
+                                    else if (timeDown.pressed) {
+                                        t = Math.max(0, t - DELTA_TIME);
+                                    }
+                                }
+
+                            }
+
+                            score = reward(ball, cursor, t);
+                            break;
+
+                        case MODE_PLAYING:
+
+                            if (t === -TIME_READY) {
+
+                                // Initialize countdown timer
+                                timer.reset();
+
+                                // Initialize ball angle and speed
+                                //ball.randomize();
+
+                                ball.theta = PARAM_ROULETTE_INITANGLE[trial];
+                                ball.omega = PARAM_ROULETTE_INITSPEED[trial];
+                                ball.tau_R = PARAM_ROULETTE_TAUR[trial];
+                                ball.theta_f = ball.theta + ball.omega * ball.tau_R;
+                                ball.update(0);
+
+                                indicator.theta = ball.theta_f;
+                                indicator.theta_f = ball.theta_f;
+                                indicator.update(0);
+
+                                // Record data
+                                trialData[DATA_THETA_INIT] = ball.theta;
+                                trialData[DATA_OMEGA_INIT] = ball.omega;
+                                trialData[DATA_THETA_FINAL] = ball.theta_f;
+
+                                sendRequestPost('Event_Roulette', 'StartPlaying');
+
+                                // Update time
+                                t += dt;
+
+                            } else if (betPlaced) {
+
+                                // Calculate reward
+                                score = reward(ball, cursor, t);
+
+                                // Record bet
+                                trialData[DATA_THETA_BET] = cursor.theta;
+                                trialData[DATA_TIME_BET] = t;
+                                trialData[DATA_REWARD] = score;
+                                totalReward += score;
+                                data[trial] = trialData.splice(0);
+                                sendRequestPost('Event_Roulette', 'PlaceBet');
+
+                                sendRequestPost('Data_RouletteData', data[trial].toString());
+
+                                // Reset and change game mode
+                                t = 0;
+                                betPlaced = false;
+                                gameMode = MODE_RESULTS;
+
+                            } else {
+
+                                // Update ball and ready timer
+                                if (t < 0) { timer.update(dt); }
+                                else { ball.update(dt); }
+
+                                t += dt;
+                            }
+
+                            break;
+
+                        case MODE_RESULTS:
+
+                            t += dt;
+                            ball.update(dt);
+
+                            if (resultsDone) {
+
+                                // reset time and flag
+                                t = - TIME_READY;
+                                resultsDone = false;
+
+                                // update trial number
+                                trial += 1;
+                                if (practicing) {
+                                    practiceTrials += 1;
+                                    totalReward = 0;
+                                }
+
+                                // check if finished
+                                if (trial - practiceTrials > NUM_TRIALS_GAME) {
+
+                                    sendRequestPost('Data_Roulette_practiceTrials', practiceTrials + 1);
+                                    sendRequestPost('Data_Roulette_trials', trial - practiceTrials - 1);
+                                    sendRequestPost('Event_Roulette', 'FinishGame')
+                                    // Change to the end mode
+                                    trial = 0;
+                                    gameMode = MODE_END;
+
+                                } else { gameMode = MODE_PLAYING; }
+
+                            }
+                            break;
+
+                        case MODE_END:
+
+                            if (gameDone) {
+                                gameDone = false;
+                                return data;
+                            }
+                    }
+                    return;
+                };
+
+
+                // -------------------------------------------------------------------------
+                // Rendering on Canvas
+                // -------------------------------------------------------------------------
+                this.render = function(dt) {
+
+                    // format text
+                    ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    switch (gameMode) {
+
+                        case MODE_INSTRUCTIONS:
+
+                            ctx.font = TITLE_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Roulette", HEADING_X, HEADING_Y);
+
+                            ctx.font = TEXT_SIZE.toString() + "px Open Sans";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("In this game, the red ball rolls around the ring but", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE+LINE_SPACING);
+                            ctx.fillText("now slowing down over time. Predict where the ball will stop", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 2*LINE_SPACING);
+                            ctx.fillText("on the ring. The more accurate you are, the higher is your", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 3*LINE_SPACING);
+                            ctx.fillText("score, but the longer you take, the lower that score will be.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 4*LINE_SPACING);
+                            ctx.fillText("Score goes down by 1/3 for every second you take to predict.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 5*LINE_SPACING);
+                            ctx.fillText("Move the white ball with your mouse to indicate where you", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 7*LINE_SPACING);
+                            ctx.fillText("think the ball will stop and click to place your bet.", MAINTEXT_X, HEADING_Y + 2.5*TEXT_SIZE + 8*LINE_SPACING);
+
+                            if ( Math.sin(2*Math.PI*BLINK_FREQ * t) >= 0 ) {
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillText("-- Press S to try the Tutorial mode! --", CANVAS_WIDTH/2, HEADING_Y + 2.5*TEXT_SIZE + 10.5*LINE_SPACING);
+                            }
+
+                            break;
+
+                        case MODE_TUTORIAL:
+
+
+
+                            track.draw(ctx);
+                            if (Math.sin(2*Math.PI*BLINK_FREQ*buttonTime) >= 0) { indicator.draw(ctx); }
+                            //ball.draw(ctx);
+                            cursor.draw(ctx);
+
+                            timeUp.draw(ctx);
+                            timeDown.draw(ctx);
+
+                            // display practice mode title
+                            ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                            ctx.textAlign = "left";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Tutorial Mode", HEADING_X, HEADING_Y);
+
+                            // display error and instructions
+                            ctx.font = (TEXT_SIZE - 3).toString() + "px Raleway";
+                            ctx.textAlign = "center";
+                            ctx.textBaseline = "middle";
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Score: "+score.toFixed(2), CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            ctx.fillText("Time:", (CANVAS_WIDTH + 5/4*CANVAS_HEIGHT)/2, (CANVAS_HEIGHT - LINE_SPACING)/2 );
+                            ctx.fillText(t.toFixed(2)+"s", (CANVAS_WIDTH + 5/4*CANVAS_HEIGHT)/2, (CANVAS_HEIGHT + LINE_SPACING)/2 );
+                            ctx.fillText("See how the score changes with time and accuracy", CANVAS_WIDTH/2, CANVAS_HEIGHT - (TEXT_SIZE - 3) - LINE_SPACING / 20*11);
+                            ctx.fillText("Press SPACE to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - (TEXT_SIZE - 3) + LINE_SPACING / 5*2);
+                            // report max reward to player
+                            ctx.fillStyle = "black";
+                            ctx.textAlign = "left";
+                            ctx.fillText("Max Score: "+reward(ball, indicator, t).toFixed(2), CANVAS_WIDTH - 7*HEADING_X, HEADING_Y);
+
+                            break;
+
+                        case MODE_PLAYING:
+
+                            track.draw(ctx);
+                            if (t < 0) {
+
+                                timer.draw(ctx);
+
+                                ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Get ready!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+                            }
+                            else {
+
+                                // draw ball
+                                ball.draw(ctx);
+
+                                // report max reward to player
+                                ctx.fillStyle = "black";
+                                ctx.textAlign = "left";
+                                ctx.fillText("Max Score: "+reward(ball, indicator, t).toFixed(2), CANVAS_WIDTH - 7*HEADING_X, HEADING_Y);
+                            }
+                            cursor.draw(ctx);
+
+
+
+                            if (practicing) {
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                                // display instructions
+                                ctx.font = (TEXT_SIZE - 3).toString() + "px Raleway";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Click to bet where the ball will stop", CANVAS_WIDTH/2, CANVAS_HEIGHT - (TEXT_SIZE - 3) - LINE_SPACING / 20*11);
+                                ctx.fillText("Try to be quick and accurate to maximize scores.", CANVAS_WIDTH/2, CANVAS_HEIGHT - (TEXT_SIZE - 3) + LINE_SPACING / 5*2-5);
+
+                            }
+                            else {
+                                // display instructions
+                                ctx.font = TEXT_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "center";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Click to bet where the ball will stop.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                            }
+
+                            break;
+
+                        case MODE_RESULTS:
+
+                            track.draw(ctx);
+                            if (Math.sin(2*Math.PI*BLINK_FREQ*t) >= 0) { indicator.draw(ctx); }
+                            ball.draw(ctx);
+                            cursor.draw(ctx);
+
+                            // report max reward to player
+                            ctx.fillStyle = "black";
+                            ctx.textAlign = "left";
+                            ctx.fillText("Max Score: "+reward(ball, indicator, data[trial][DATA_TIME_BET]).toFixed(2), CANVAS_WIDTH - 7*HEADING_X, HEADING_Y);
+
+                            // report error to player
+                            ctx.fillStyle = "black";
+                            ctx.textAlign = "center";
+                            ctx.fillText("Score: "+score.toFixed(2), CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+
+                            if (practicing) {
+                                if (trial < NUM_TRIALS_PRACTICE-1) {
+                                  if (NUM_TRIALS_PRACTICE-trial-1 === 1) {
+                                    ctx.fillText("1 practice left. Click to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                  } else {
+                                    ctx.fillText((NUM_TRIALS_PRACTICE-trial-1).toString()+" practices left. Click to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                  }
+                                } else {
+                                  ctx.fillText("0 practice left. Click to continue to real game.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }
+                                //ctx.fillText("Click to practice again. Press S to play for real.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+
+                                // display practice mode title
+                                ctx.font = HEADING_SIZE.toString() + "px Raleway";
+                                ctx.textAlign = "left";
+                                ctx.textBaseline = "middle";
+                                ctx.fillStyle = "black";
+                                ctx.fillText("Practice Mode", HEADING_X, HEADING_Y);
+
+                            } else {
+                                if (NUM_TRIALS_GAME-trial+practiceTrials > 1) {
+                                  ctx.fillText((NUM_TRIALS_GAME-trial+practiceTrials).toString()+" trials left. Click to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }else {
+                                  ctx.fillText((NUM_TRIALS_GAME-trial+practiceTrials).toString()+" trial left. Click to continue.", CANVAS_WIDTH/2, CANVAS_HEIGHT - TEXT_SIZE);
+                                }
+                            }
+
+                            break;
+
+                        case MODE_END:
+
+                            // display end message
+                            ctx.fillStyle = "black";
+                            ctx.fillText("Your results have been recorded.", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 3*TEXT_SIZE - 5);
+                            ctx.fillText("Thanks for playing!", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 2*TEXT_SIZE);
+                            ctx.fillText("Total Score:", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TEXT_SIZE_SMALL);
+                            ctx.fillText(" "+totalReward.toFixed(2), CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + TEXT_SIZE + TEXT_SIZE_SMALL);
+                            ctx.font = (TEXT_SIZE_SMALL).toString() + "px Raleway";
+                            // ctx.fillText("Note that the actual compensation you will receive (4USD) is fixed, ", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 4*TEXT_SIZE_SMALL + 20);
+                            // ctx.fillText("not equal to the reward above.", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 5*TEXT_SIZE_SMALL + 20);
+                            ctx.font = (TEXT_SIZE).toString() + "px Raleway";
+                            ctx.fillText("Press SPACE to finish the game and claim rewards.", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 8*TEXT_SIZE_SMALL + 10);
+                            // ctx.fillText("at our next group meeting :)", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 4 * TEXT_SIZE + 20);
+                            break;
+                    }
+
+                };
+
+            };
+
+            // -----------------------------------------------------------------------------
+            // Shared Game Classes
+            // -----------------------------------------------------------------------------
+            function Track(canvas) {
+
+                this.x = canvas.width / 2;
+                this.y =  canvas.height / 2;
+                this.radius = 7.5 / 20 * canvas.height;
+                this.width = canvas.height / 11;
+
+                this.draw = function(ctx) {
+
+                    // Draw bigger circle
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0.0, 2*Math.PI);
+                    ctx.fillStyle = "black";
+                    ctx.fill();
+                    ctx.closePath();
+
+                    // Cut out middle circle
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius - this.width, 0.0, 2*Math.PI);
+                    ctx.fillStyle = "white";
+                    ctx.fill();
+                    ctx.closePath();
+                };
+
+            }
+
+            function ClockFace(track, countdownTime) {
+
+                const FACE_COLOR = "#d9d9d9",
+                THETA_MIN = - Math.PI / 4,
+                THETA_MAX = 3*Math.PI / 2;
+
+                this.x = track.x;
+                this.y =  track.y;
+                this.radius = track.radius;
+                this.theta = THETA_MIN;
+
+                this.update = function(dt) {
+                    this.theta += 2*Math.PI / countdownTime * dt;
+                    this.theta = Math.min(THETA_MAX, this.theta);
+
+                };
+
+                this.draw = function(ctx) {
+
+                    // Draw clock face
+                    ctx.beginPath();
+                    ctx.moveTo(track.x, track.y);
+                    ctx.arc(track.x, track.y, track.radius - track.width, this.theta, THETA_MAX);
+                    ctx.lineTo(track.x, track.y);
+                    ctx.closePath();
+                    ctx.fillStyle = FACE_COLOR;
+                    ctx.fill();
+                    //ctx.closePath();
+
+                };
+
+                this.reset = function() {
+                    this.theta = THETA_MIN;
+                };
+
+            }
+
+            function Ball(color, track, tau_R = 0) {
+
+                // Randomization properties
+                const
+                    OMEGA_MEAN = 100 * Math.PI / 180,
+                    OMEGA_STD = 50 * Math.PI / 180; // Original: 40*Math.PI/180
+
+                //var track = circularTrack;
+
+                // Ball properties
+                this.radius = track.width / 2;
+                this.color = color;
+                this.tau_R = tau_R;
+
+                // Ball position (angular)
+                this.theta = 0;
+                this.omega = 0;
+                this.theta_f = 0;
+
+                // Ball position (Cartesian)
+                this.x = 0;
+                this.y = 0;
+
+                this.update = function(dt) {
+
+                    // Update angle
+                    if (this.tau_R === 0) {
+
+                        this.theta += this.omega * dt;
+
+                    } else {
+
+                        this.theta += this.omega * this.tau_R * (1 - Math.exp(-dt/this.tau_R));
+                        this.omega *= Math.exp(-dt/this.tau_R);
+
+                    }
+
+                    // Update Cartesian position
+                    this.x = track.x + (track.radius - this.radius) * Math.cos(this.theta);
+                    this.y = track.y - (track.radius - this.radius) * Math.sin(this.theta);
+
+                };
+
+                this.randomize = function() {
+
+                    var n = 0;
+                    var z = 0;
+                    var numRand = 1000;
+
+                    // Randomize theta
+                    this.theta = 2 * Math.PI * Math.random();
+
+                    // Randomize omega (approximately Gaussian)
+                    //this.omega = (60 + 60*Math.random()) * Math.PI / 180;
+                    this.omega = OMEGA_MEAN;
+                    for (n = 0; n < numRand; n++) {
+                        z = Math.random();
+                        this.omega += Math.sqrt(3 / numRand) / Math.PI * OMEGA_STD * Math.log(z / (1 - z));
+                    }
+                    this.omega *= (Math.random() > 0.5) ? 1.0 : -1.0;
+
+                    // Compute final angle
+                    this.theta_f = this.theta + this.omega * this.tau_R;
+
+                    // Update
+                    this.update(0);
+
+                };
+
+
+
+                this.draw = function(ctx) {
+
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0.0, 2.0 * Math.PI);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+
+                };
+
+            }
+
+
+            // -----------------------------------------------------------------------------
+            // Run Game
+            // -----------------------------------------------------------------------------
+
+            var prevTime = 0.0;
+
+            sendRequestPost('Event_Welcome', "StartWelcome");
+
+            // Create and center canvas on screen
+            var canvas = document.getElementById("myCanvas");
+            canvas.style.display = "block";
+            canvas.style.margin = "auto";
+            canvas.style.position = "absolute";
+            canvas.style.top = 0;
+            canvas.style.bottom = 0;
+            canvas.style.left = 0;
+            canvas.style.right = 0;
+
+            // Define data variables
+            var doneWelcome;
+            var doneConsent;
+            var doneConsent2;
+            var doneNotice;
+            var pixelsPerInch;
+            var doneInfo;
+            var dataAngleMatching;
+            var dataSpeedMatching;
+            var dataRoulette;
+
+            // Initialize first game (calibration)
+            var game = new welcomePage(canvas)
+            //var game = new sizeCalibration(canvas);
+
+            // Run the game
+            requestAnimationFrame(draw);
+
+
+            function draw(timeStamp) {
+
+                // calculate time step and update time
+                var dt = (timeStamp - prevTime) / 1000;
+                prevTime = timeStamp;
+
+                if (!doneWelcome) {
+                  doneWelcome = game.updateState();
+                  game.render();
+                  if (typeof doneWelcome !== "undefined"){
+                    sendRequestPost('Event_Welcome', "FinishWelcome");
+                    game = new consentForm(canvas);
+                  }
+                } else if (!doneConsent) {
+                    // Calibration step
+                    doneConsent = game.updateState();
+                    game.render();
+                    // Move on when calibration is done
+                    if (typeof doneConsent !== "undefined") {
+                        sendRequestPost('Event_Info', "FinishConsent1");
+                        game = new consentForm2(canvas);
+                        doneConsent2 = false;
+                    }
+                } else if (!doneConsent2) {
+                    // Calibration step
+                    doneConsent2 = game.updateState();
+                    game.render();
+                    // Move on when calibration is done
+                    if (typeof doneConsent2 !== "undefined") {
+                      if (doneConsent2 === 1) {
+                        sendRequestPost('Event_Info', "FinishConsent2");
+                        game = new beforeStart(canvas);
+                      } else if (doneConsent2 === 2){
+                        sendRequestPost('Event_Info', "GoBackConsent1");
+                        game = new consentForm(canvas);
+                        doneConsent = false;
+                      }
+                    }
+                } else if (!doneNotice) {
+
+                    // Calibration step
+                    doneNotice = game.updateState();
+                    game.render();
+
+                    // Move on when calibration is done
+                    if (typeof doneNotice !== "undefined") {
+                        sendRequestPost('Event_Info', "FinishNotice");
+                        game = new sizeCalibration(canvas);
+                    }
+                } else if (!pixelsPerInch) {
+
+                    // Calibration step
+                    pixelsPerInch = game.updateState();
+                    game.render();
+
+                    // Move on when calibration is done
+                    if (typeof pixelsPerInch !== "undefined") {
+                        sendRequestPost('Event_Info', "StartPersonalInfo");
+                        game = new personalInfo(canvas);
+                    }
+                } else if (!doneInfo) {
+                  doneInfo = game.updateState();
+                  game.render();
+
+                  // Move on when calibration is done
+                  if (typeof doneInfo !== "undefined" && PLAY_ANGLE_BOOL) {
+                      sendRequestPost('Event_Info', "FinishPersonalInfo");
+                      sendRequestPost('Event_Angle', "StartAngleMatchingGame");
+                      sendRequestPost('Event_Angle', "StartInstructions");
+                      game = new angleMatchingGame(canvas);
+                  }
+                } else if (!dataAngleMatching) {
+
+                    // Angle matching game
+                    dataAngleMatching = game.updateState(dt);
+                    game.render(dt);
+
+                    // Move on when angle matching is done
+                    if (typeof dataAngleMatching !== "undefined" && PLAY_SPEED_BOOL) {
+                        sendRequestPost('Event_Speed', 'StartSpeedMatching');
+                        sendRequestPost('Event_Speed', 'StartInstructions');
+                        game = new speedMatchingGame(canvas);
+                    }
+                } else if (!dataSpeedMatching) {
+
+                    // Speed matching game
+                    dataSpeedMatching = game.updateState(dt);
+                    game.render(dt);
+
+                    // Move on when speed matching is done
+                    if (typeof dataSpeedMatching !== "undefined" && PLAY_ROULETTE_BOOL) {
+                        game = new rouletteGame(canvas);
+                    }
+                } else if (!dataRoulette) {
+
+                    // Roulette game
+                    dataRoulette = game.updateState(dt);
+                    game.render(dt);
+
+                    // Send all data to server when roulette is done
+                    if (typeof dataRoulette !== "undefined") {
+                        // send data to server!
+                    }
+                }
+
+                // keep running until roulette game is finished
+                if (!dataRoulette) { requestAnimationFrame(draw); }
+
+            };
+
+        </script>
+    </body>
+</html>
