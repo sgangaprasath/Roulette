@@ -1,4 +1,4 @@
-# Roulette paper data
+# Data associated with the paper titled 'Speed-accuracy trade-offs in Roulette betting'
 
 This folder contains two sub-folders:
   - Analysis: Contains raw data (logRoulette_150ppl.txt) collected from participants and the processing python script (DataAnalysis.ipynb) used to generate figures.
